@@ -25,15 +25,14 @@ window_roi = 'ROI_image'
 window_rotated = 'ROI_rotated'
 window_motivos = "Motifs_on_card"
 
-cv2.namedWindow(window_original, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
-cv2.namedWindow(window_threshold, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
-cv2.namedWindow(window_labels, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
-cv2.namedWindow(window_roi, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
-cv2.namedWindow(window_rotated, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
-cv2.namedWindow(window_motivos, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
+
 
 # Umbral usado en el trabajo
 GLOBAL_THRESHOLD = 184
+# -------------------------
+# Configuración de visualización
+# -------------------------
+SHOW_WINDOWS = True
 
 # -------------------------
 # Estructuras de datos
@@ -256,6 +255,13 @@ def dibujar_motivos(card):
 # Main: proceso de imágenes
 # -------------------------
 def main():
+    if SHOW_WINDOWS:
+        cv2.namedWindow(window_original, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
+        cv2.namedWindow(window_threshold, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
+        cv2.namedWindow(window_labels, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
+        cv2.namedWindow(window_roi, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
+        cv2.namedWindow(window_rotated, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
+        cv2.namedWindow(window_motivos, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
     # Pedimos carpeta al usuario (diálogo gráfico)
     root = Tk()
     root.withdraw()  # ocultar la ventana principal de Tk
@@ -293,7 +299,8 @@ def main():
                 continue
 
             img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            cv2.imshow(window_original, img)
+            if SHOW_WINDOWS:
+                cv2.imshow(window_original, img)
 
             # Umbralización global para segmentar cartas del fondo
             _, thresh_inv = cv2.threshold(img_gray, GLOBAL_THRESHOLD, 255, cv2.THRESH_BINARY_INV)
@@ -382,24 +389,27 @@ def main():
             cv2.imshow(window_threshold, output_all)
             if 'label_ids' in locals():
                 cv2.imshow(window_labels, label2rgb(label_ids))
-
+            
+            if SHOW_WINDOWS:
             # Espera a tecla para continuar (no bloqueante: espera a que se pulse una tecla)
-            print("Pulsa 'n' para siguiente imagen, 'q' o ESC para salir.")
-            while True:
-                key = cv2.waitKey(0) & 0xFF
-                # n -> siguiente imagen; q/ESC -> salir
-                if key == ord('n'):
-                    break
-                if key == ord('q') or key == 27:
-                    print("Salida solicitada por el usuario.")
-                    # Guardar lo que llevemos y salir de bucle superior
-                    root_save = base_path
-                    save_name = 'trainCards.npz' if tipo.lower()=='train' else 'testCards.npz'
-                    save_path = os.path.join(os.getcwd(), save_name)
-                    np.savez_compressed(save_path, Cards=cards)
-                    print(f"Guardado parcial en: {save_path} (cartas={len(cards)})")
-                    cv2.destroyAllWindows()
-                    return
+                print("Pulsa 'n' para siguiente imagen, 'q' o ESC para salir.")
+                while True:
+                    key = cv2.waitKey(0) & 0xFF
+                    # n -> siguiente imagen; q/ESC -> salir
+                    if key == ord('n'):
+                        break
+                    if key == ord('q') or key == 27:
+                        print("Salida solicitada por el usuario.")
+                        # Guardar lo que llevemos y salir de bucle superior
+                        root_save = base_path
+                        save_name = 'trainCards.npz' if tipo.lower()=='train' else 'testCards.npz'
+                        save_path = os.path.join(os.getcwd(), save_name)
+                        np.savez_compressed(save_path, Cards=cards)
+                        print(f"Guardado parcial en: {save_path} (cartas={len(cards)})")
+                        cv2.destroyAllWindows()
+                        return
+            else:
+                pass
 
         # Si quieres NO recorrer subcarpetas (solo la principal), descomenta la siguiente línea:
         break
@@ -409,8 +419,9 @@ def main():
     save_path = os.path.join(os.getcwd(), save_name)
     np.savez_compressed(save_path, Cards=cards)
     print(f"\nGuardado final: {save_path}  (total cartas = {len(cards)})")
-
-    cv2.destroyAllWindows()
+    
+    if SHOW_WINDOWS:
+        cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     main()
