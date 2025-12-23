@@ -2,8 +2,7 @@
 #
 # Programa pasa realizar el etiquetado de las cartas y sus motivos, obtenidos desde un archivo de tipo *.npz
 #
-# Autor: José M Valiente    Fecha: abril 2023
-#
+# Autor: Raquel Montoliu y Ana Asenjo    Fecha: diciembre 2025
 
 import tkinter as tk
 from tkinter import ttk
@@ -38,8 +37,17 @@ class App(tk.Tk):
             # Crear la estructura de cartas
         npzfile = np.load(filecard, allow_pickle=True) 
         self.cards = npzfile['Cards']
+        
+        for c in self.cards:
+            if not hasattr(c, 'realSuit'):
+                c.realSuit = 'i'
+            if not hasattr(c, 'realFigure'):
+                c.realFigure = 'i'
+            if hasattr(c, 'motifs'):
+                for m in c.motifs:
+                    if not hasattr(m, 'label'):
+                        m.label = 'Others'
             # Averiguar cual es la primera carta sin etiquetar
-        # --- SUSTITUYE DESDE AQUÍ ---
         le = len(self.cards)
         if le > 0:
             # Empezamos siempre por la primera carta (índice 0)
@@ -50,7 +58,6 @@ class App(tk.Tk):
             messagebox.showwarning('Atención', 'El archivo no contiene ninguna carta.')
             self.destroy()
             return
-        # --- HASTA AQUÍ ---
             self.show_card(self.cards[i])   # Carta inicial
             print(f'{len(self.cards)} Cartas. Carta inicial {self.card_idx} ')    
               
@@ -67,8 +74,7 @@ class App(tk.Tk):
         height = int(h / scale_div)
         im_resized = im.resize((width, height))
         photo = ImageTk.PhotoImage(im_resized)
-        return photo        
-    
+        return photo   
     
     def show_image(self,  img):
         photo = self.get_photo(img)
