@@ -2,7 +2,7 @@
 from tensorflow.keras.models import load_model
 
 # 1. Cargar el modelo
-model_path = "MyCNN.h5"
+model_path = "MyCNN_finetuned.h5"
 model = load_model(model_path)
 
 # 2. Información básica
