@@ -2,9 +2,9 @@
 #
 # Predicción de motivos usando una CNN preentrenada
 # Modelo proporcionado por el profesor: MyCNN.h5
-#
-# Autor: (tu nombre)
-# Fecha: diciembre 2025
+# Modelo entrenado por nosotras: MyCNN_finetuned.h5
+# Autor: Raquel Montoliu y Ana Asenjo    Fecha: diciembre 2025
+
 
 import os
 import numpy as np

@@ -4,8 +4,7 @@
 # Se parte del modelo MyCNN.h5 proporcionado por el profesor
 # Se utiliza data augmentation debido al tamaño reducido del dataset
 #
-# Autor: (tu nombre)
-# Fecha: diciembre 2025
+# Autor: Raquel Montoliu y Ana Asenjo    Fecha: diciembre 2025
 
 import tensorflow as tf
 from tensorflow.keras.models import load_model
