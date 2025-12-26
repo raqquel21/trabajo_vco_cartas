@@ -94,6 +94,33 @@ history = model.fit(
 )
 
 # -----------------------------
+# Visualización de métricas
+# -----------------------------
+import matplotlib.pyplot as plt
+import numpy as np
+
+plt.style.use("ggplot")
+plt.figure(figsize=(12,5))
+
+# Loss
+plt.subplot(1,2,1)
+plt.plot(np.arange(0, len(history.history['loss'])), history.history['loss'], label="train_loss")
+plt.title("Training Loss")
+plt.xlabel("Epoch #")
+plt.ylabel("Loss")
+plt.legend()
+
+# Accuracy
+plt.subplot(1,2,2)
+plt.plot(np.arange(0, len(history.history['accuracy'])), history.history['accuracy'], label="train_acc")
+plt.title("Training Accuracy")
+plt.xlabel("Epoch #")
+plt.ylabel("Accuracy")
+plt.legend()
+
+plt.show()
+
+# -----------------------------
 # Guardado final
 # -----------------------------
 model.save(OUTPUT_MODEL)

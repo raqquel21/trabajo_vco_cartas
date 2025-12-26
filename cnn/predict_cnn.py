@@ -12,11 +12,13 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
 
 # -----------------------------
 # Parámetros
 # -----------------------------
-MODEL_PATH = "MyCNN_finetuned.h5"
+MODEL_PATH = "MyCNN.h5"
 TEST_DIR = "Motifs_test"
 
 IMG_SIZE = (120, 120)
@@ -60,6 +62,13 @@ y_pred_classes = np.argmax(y_pred, axis=1)
 
 y_true = test_generator.classes
 class_names = list(test_generator.class_indices.keys())
+
+# Matriz de confusión
+cm = confusion_matrix(y_true, y_pred_classes)
+cm_display = ConfusionMatrixDisplay(cm, display_labels=class_names)
+cm_display.plot(xticks_rotation='vertical')
+plt.title("Confusion Matrix")
+plt.show()
 
 # -----------------------------
 # Resultados
