@@ -6,7 +6,9 @@ Script académico para EXTRAER cartas y MOTIVOS, rotar las ROI,
 y guardar todas las cartas con sus motivos en un fichero .npz
 (para posterior etiquetado manual con 'etiquetar_cartas.py').
 
-No realiza clasificación automática. Sigue la especificación del trabajo.
+No realiza clasificación automática.
+
+# Autor: Raquel Montoliu y Ana Asenjo    Fecha: diciembre 2025
 """
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -29,14 +31,11 @@ window_motivos = "Motifs_on_card"
 
 # Umbral usado en el trabajo
 GLOBAL_THRESHOLD = 184
-# -------------------------
-# Configuración de visualización
-# -------------------------
+
+# Esto es para abrir las ventanas de las imagenes solo en este programa
 SHOW_WINDOWS = True
 
-# -------------------------
 # Estructuras de datos
-# -------------------------
 class Card:
     # Suits. Palos de las cartas de póker
     DIAMONDS = 'Diamonds'   # Rombos
@@ -51,11 +50,11 @@ class Card:
         # Identificador
         self.cardId = 0
 
-        # Etiquetas reales (verdad fundamental → a rellenar con etiquetar_cartas.py)
+        # Etiquetas reales
         self.realSuit = 'i'
         self.realFigure = 'i'
 
-        # Etiquetas predichas (se rellenarán en la fase de clasificación)
+        # Etiquetas predichas
         self.predictedSuit = ''
         self.predictedFigure = ''
 
@@ -64,7 +63,7 @@ class Card:
                     ('width', np.intc),('height', np.intc)]
         self.boundingBox = np.zeros(1, dtype=bboxType).view(np.recarray)
 
-        # Ángulo de rotación (grados)
+        # Ángulo de rotación
         self.angle = 0.0
 
         # ROI rotada (gris y color)
@@ -97,9 +96,7 @@ class Motif:
     def __repr__(self):
         return f"Motif(area={self.area}, bbox={self.boundingBox}, label={self.label})"
     
-# ---------------------------------------------------------
 #         CLASIFICACIÓN DE PALOS
-# ---------------------------------------------------------
 def clasificar_motivo(motif, gray_img, color_img):
 
     x, y, w, h = motif.boundingBox
@@ -120,7 +117,7 @@ def clasificar_motivo(motif, gray_img, color_img):
     B,G,R,_ = cv2.mean(crop_color, mask=mask)
     is_red = (R > G+40 and R > B+40)
 
-    # Diamantes y corazones → rojos
+    # Diamantes y corazones -> rojos
     if is_red:
         if hu1 < 4.2:
             return "Diamonds"
@@ -132,9 +129,9 @@ def clasificar_motivo(motif, gray_img, color_img):
             return "Spades"
         else:
             return "Clubs"
-# ---------------------------------------------------------
+        
+        
 #         CLASIFICACIÓN DE FIGURAS (A,2..K)
-# ---------------------------------------------------------
 def clasificar_figura(motif):
 
     x, y, w, h = motif.boundingBox
@@ -162,9 +159,7 @@ def clasificar_figura(motif):
 
 
 
-# -------------------------
 # Funciones utilitarias
-# -------------------------
 def label2rgb(label_img):
     if label_img.size == 0 or np.max(label_img) == 0:
         return np.zeros((label_img.shape[0], label_img.shape[1], 3), dtype=np.uint8)
@@ -251,9 +246,7 @@ def dibujar_motivos(card):
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,255), 1, cv2.LINE_AA)
     cv2.imshow(window_motivos, vis)
 
-# -------------------------
 # Main: proceso de imágenes
-# -------------------------
 def main():
     if SHOW_WINDOWS:
         cv2.namedWindow(window_original, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
@@ -284,11 +277,8 @@ def main():
     icard = 0
 
     # Recorremos archivos de la carpeta (no recursivo)
-    # Si quieres recursividad, cambia os.walk por os.listdir o similar.
     for root_dir, dirs, files in os.walk(base_path, topdown=True):
         # Procesar solo la carpeta principal (no subcarpetas por defecto):
-        # Si prefieres procesar recursivamente, elimina este break.
-        # break  # <-- comenta si quieres solo la carpeta principal
         for name in files:
             if not name.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.tiff')):
                 continue
@@ -411,7 +401,6 @@ def main():
             else:
                 pass
 
-        # Si quieres NO recorrer subcarpetas (solo la principal), descomenta la siguiente línea:
         break
 
     # Guardar fichero final
