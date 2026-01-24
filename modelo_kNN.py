@@ -1,137 +1,127 @@
-# modelor_kNN.py
-#
-# Programa pasa realizar el entrenamiento de un clasificador k-Nearest Neighbour (kNN) con los motivos
-# de las cartas de poker, obtenidos desde un archivo de tipo *.npz
-# Después se realiza la validación del modelo kNN con los motivos de la cartas de test.
-# 
-#
-# Autor:  José M Valiente + alumno .............    Fecha: mayo 2023
-#
-
-import cv2
-import os
+import cv2 as cv
 import numpy as np
-from clases_cartas import Card, Motif
-import warnings
+import matplotlib.pyplot as plt
 from sklearn import metrics
+from sklearn.metrics import classification_report, confusion_matrix, matthews_corrcoef
+from clases_cartas import Card, Motif
 
 
-FIGURES = ('0','A','2','3','4','5','6','7','8','9','J','Q','K') # Se accede mediantge Carta.FIGURES[i]
+FIGURES = ('0','A','2','3','4','5','6','7','8','9','J','Q','K')
 SUITS = ('Rombos','Picas','Corazones','Treboles')
-MOTIF_LABELS = ('Rombos','Picas','Corazones','Treboles','0','2','3','4','5','6','7','8','9','A','J','Q','K','Others')   
+MOTIF_LABELS = (
+    'Rombos','Picas','Corazones','Treboles',
+    '0','2','3','4','5','6','7','8','9','A','J','Q','K','Others'
+)
 
-filecard = 'trainCards.npz'
+############################
+# ====== TRAINING =========
+############################
 
-npzfile = np.load(filecard, allow_pickle=True) 
+npzfile = np.load('trainCards.npz', allow_pickle=True)
 cards = npzfile['Cartas']
-llen = cards.size
 
-# Listas vacias
-samples = []     # Lista de características de cada muestra
-responses = []   # Lista de etiqueta real de cada muestra
+samples = []
+responses = []
 
-
-############## TRAINING ############################
-j=0
-for i in range(0,llen):   # para todas las cartas
-    motifs = cards[i].motifs
-    for mot in motifs:
+for card in cards:
+    for mot in card.motifs:
         lbl = mot.motifLabel
         if lbl == 'i':
-            continue       # si el motivo no está etiquetado se descarta
-        idx = MOTIF_LABELS.index(lbl)    # etiqueta real del motivo
-        responses.append(idx)
-        j +=1
-        print(j, idx, lbl)       
-        # Añadir a samples todas las características del motivo que consideremos oportunas.
-        # Ojo que debe ser una fila o vector de números reales
+            continue
         samples.append(mot.features)
+        responses.append(MOTIF_LABELS.index(lbl))
 
+sampl = np.asarray(samples, dtype=np.float32)
+resp = np.asarray(responses, dtype=np.int32)
 
-# Convertir las listas en arrays
-sampl = np.asarray(samples).astype(np.float32)
-resp = np.asarray(responses)
+############################
+# ==== NORMALIZACIÓN ======
+############################
 
-# Creación del modelo kNN
-knn = cv2.ml.KNearest_create()     # A comletar
+mean = sampl.mean(axis=0)
+std = sampl.std(axis=0) + 1e-8
 
-# Entrenar el modelo kNN
+sampl_norm = (sampl - mean) / std
 
+############################
+# ========= kNN ===========
+############################
 
-knn.train(sampl, cv2.ml.ROW_SAMPLE, resp)     # A comletar
+knn = cv.ml.KNearest_create()
+knn.setDefaultK(3)
+knn.setIsClassifier(True)
+knn.train(sampl_norm, cv.ml.ROW_SAMPLE, resp)
 
+############################
+# ========= SVM ===========
+############################
 
-######## TEST ##########
+svm = cv.ml.SVM_create()
+svm.setType(cv.ml.SVM_C_SVC)
+svm.setKernel(cv.ml.SVM_LINEAR)
+svm.setC(1.0)
+svm.setTermCriteria((cv.TERM_CRITERIA_MAX_ITER, 1000, 1e-6))
+svm.train(sampl_norm, cv.ml.ROW_SAMPLE, resp)
 
-filecardTest = 'testCards.npz'
-npzfileT = np.load(filecardTest, allow_pickle=True) 
+############################
+# ========= TEST ==========
+############################
+
+npzfileT = np.load('testCards.npz', allow_pickle=True)
 cardsTest = npzfileT['Cartas']
-
 
 samplesTest = []
 responsesTest = []
-le_test=cardsTest.size
-j=0
-for i in range(0,le_test):   # para todas las cartas
-    motifs = cardsTest[i].motifs
-    for mot in motifs:
-       
+
+for card in cardsTest:
+    for mot in card.motifs:
         lbl = mot.motifLabel
-        if lbl == 'i':    # si el motivo no está etiquetado se le pone 'Others'
+        if lbl == 'i':
             lbl = 'Others'
-        idx = MOTIF_LABELS.index(lbl)
-        responsesTest.append(idx)
-        j +=1
-        print(j, idx, lbl)
-        # Añadir a samplesTest todas las características del motivo que consideremos oportunas.
-        # Ojo que debe ser una fila o vector de números reales
         samplesTest.append(mot.features)
-     
-        
-        
-        # Convertir las listas en arrays
-samplTest = np.asarray(samplesTest).astype(np.float32)
-respTest = np.asarray(responsesTest)
+        responsesTest.append(MOTIF_LABELS.index(lbl))
 
-# Predicción con k=3
+samplTest = np.asarray(samplesTest, dtype=np.float32)
+respTest = np.asarray(responsesTest, dtype=np.int32)
 
-ret, results, neighbours ,dist = knn.findNearest(samplTest, k=9) # A completar por el alumno
+samplTest_norm = (samplTest - mean) / std
 
-# Visualización de resultados
+############################
+# ===== PREDICCIÓN ========
+############################
 
-le = len(results)
-j=0
-pred = np.zeros(le)
-real = np.zeros(le)
+# kNN
+_, res_knn, _, _ = knn.findNearest(samplTest_norm, k=3)
+pred_knn = res_knn.flatten()
 
-for i in range(0,le):
-    pred[i] = int(results[i][0])
-    real[i] = respTest[i]
-    pred_str = MOTIF_LABELS[int(results[i][0])]
-    real_str = MOTIF_LABELS[respTest[i]]
-    print(f"result: {pred_str}  real:  {real_str}" )
-    if pred[i]==real[i]:
-        j+=1
+# SVM
+_, res_svm = svm.predict(samplTest_norm)
+pred_svm = res_svm.flatten()
 
-print(f'Tasa aciertos:  {j/le}')
+############################
+# ===== EVALUACIÓN ========
+############################
+
+def evaluar(nombre, real, pred):
+    print(f"\n===== {nombre} =====")
+    print("Accuracy:", np.mean(real == pred))
+    print("MCC:", matthews_corrcoef(real, pred))
+    print(classification_report(real, pred, target_names=MOTIF_LABELS))
+
+    cm = confusion_matrix(real, pred)
+    disp = metrics.ConfusionMatrixDisplay(cm, display_labels=MOTIF_LABELS)
+    disp.plot(xticks_rotation='vertical')
+    plt.title(nombre)
+    plt.show()
 
 
-# VISUALIZACIÓN
+evaluar("kNN ", respTest, pred_knn)
+evaluar("SVM LINEAL", respTest, pred_svm)
 
-from sklearn.metrics import confusion_matrix, classification_report, matthews_corrcoef
+############################
+# ===== GUARDAR ===========
+############################
 
-# Obtenemos el report
-CLS_REP=classification_report(real, pred, target_names=MOTIF_LABELS)
-print('Classification report ', CLS_REP) 
-CONF_MAT = confusion_matrix(real,pred)
-print('Confusion Matrix', CONF_MAT)
-MCC = matthews_corrcoef(real, pred)
-print('MCC: ', MCC)
+knn.save('modelo_knn.yml')
+svm.save('modelo_svm.yml')
 
-import matplotlib.pyplot as plt
-cm_display = metrics.ConfusionMatrixDisplay(confusion_matrix=CONF_MAT, display_labels=MOTIF_LABELS)  # A completar
-cm_display.plot(xticks_rotation='vertical')
-plt.show()
-
-        
-        
